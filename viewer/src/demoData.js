@@ -110,10 +110,10 @@ export const demoCases = [
     department: 'CSE(Data Science)', semester: '3rd', section: 'A',
     subject_raw: 'ESCS 201', subject_code_raw: 'ESCS 201',
     subject_name: 'Programming for Problem Solving', subject_code: 'ESCS201',
-    subject_master_id: null, match_method: 'duplicate_code', confidence: 0.49,
+    subject_master_id: null, match_method: 'shared_code', confidence: 0.49,
     requires_review: true,
-    review_reasons: ['Catalog subject record was not identified unambiguously', 'Multiple subjects match'],
-    scenario_note: 'All matching catalog rows share a name, but no single subject record ID can be chosen.',
+    review_reasons: ['Catalog subject record was not identified unambiguously', 'Multiple catalog record IDs share this normalized code and name'],
+    scenario_note: 'ESCS 201 and ESCS201 have the same letter and digit sequence. Several catalog rows share the name and code, but no single record ID can be chosen.',
   },
   {
     cell_ref: 'Demo sheet!B33', day: 'Saturday', start_time: '09:30', end_time: '10:25',

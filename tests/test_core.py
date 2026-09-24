@@ -24,6 +24,8 @@ def test_code_and_faculty_are_separate():
         "Multimedia Systems", "OEC-CS701B", "SC5")
     assert parse_class_text("PECCS701 E (Machine Learning) (ND)")[:3] == (
         "Machine Learning", "PECCS701 E", "ND")
+    for code in ("ESCS201", "ESCS 201", "ESCS-201", "ESCS_201", "ESCS - _ 201"):
+        assert parse_class_text(code)[1] == code
 
 
 def test_grid_and_review_policy():
@@ -82,6 +84,12 @@ def test_saved_tint_catalog_scopes_and_duplicate_code():
     match = match_subject("DSE301B", "DSE301B", catalog, college=None,
                           department="BCA", year=None, semester="3rd", course="BCA")
     assert match.ambiguous and match.subject is None
+    shared = match_subject("[Revision Class] TG", "ESCS - _ 201", catalog, college=None,
+                           department="CSE(Data Science)", year="2nd", semester="3rd")
+    assert shared.method == "shared_code" and shared.subject is None
+    assert shared.common_subject.name == "Programming for Problem Solving"
+    assert all(catalog.code_matches(code) == catalog.code_matches("ESCS201")
+               for code in ("ESCS 201", "ESCS-201", "ESCS_201", "ESCS - _ 201"))
 
 
 def test_tint_workbook_keeps_block_context_and_repairs_time():
@@ -104,6 +112,8 @@ def test_tint_workbook_keeps_block_context_and_repairs_time():
     assert "Time header required AM/PM correction" in corrected.review_reasons
     postgraduate = next(item for item in routine.classes if item.cell_ref == "M.tech!G16")
     assert (postgraduate.course, postgraduate.department, postgraduate.semester) == ("M.Tech", "CSE", "3rd")
+    revision = next(item for item in routine.classes if item.cell_ref == "2nd year!J153")
+    assert revision.subject_code_raw == "ESCS 201"
 
 
 def test_code_lookup_precedes_context_and_name_guessing():
@@ -221,6 +231,7 @@ def test_duplicate_code_with_shared_name_returns_name_without_record_id():
     match = match_subject("ESCS 201", "ESCS 201", catalog, college=None,
                           department="Unknown", year=None, semester="3rd")
     assert match.subject is None and match.common_subject is not None
+    assert match.method == "shared_code" and not match.ambiguous
     item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
                         subject_raw="ESCS 201", subject_code_raw="ESCS 201",
                         source="native", confidence=0)

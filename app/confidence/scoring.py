@@ -32,6 +32,8 @@ def score_class(item: ClassSession, match: Match, ocr_confidence: float | None =
         reasons.append("Catalog subject record was not identified unambiguously")
     if match.context_mismatch:
         reasons.append("Matched code belongs to a different or unrecognized catalog context")
+    if match.method == "shared_code":
+        reasons.append("Multiple catalog record IDs share this normalized code and name")
     if match.method == "unmatched_code":
         reasons.append("Extracted subject code is absent from the catalog")
         name_reason = {

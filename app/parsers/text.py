@@ -11,7 +11,7 @@ DAY_ALIASES.update({name[:3].lower(): name for name in DAY_NAMES})
 DAY_ALIASES.update({"mo": "Monday", "tu": "Tuesday", "we": "Wednesday", "th": "Thursday", "fr": "Friday", "sa": "Saturday", "su": "Sunday"})
 TIME_RE = re.compile(r"(?<!\d)(\d{1,2})(?:[:.]([0-5]\d))?\s*(a\.?m\.?|p\.?m\.?)?(?!\d)", re.I)
 RANGE_RE = re.compile(r"(\d{1,2}(?:[:.]\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)\s*(?:-|–|—|to)\s*(\d{1,2}(?:[:.]\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)", re.I)
-CODE_RE = re.compile(r"\b[A-Z]{2,8}(?:[- ]?[A-Z]{1,6}){0,2}[- ]?\d{2,4}(?:[- ]?[A-Z])?\b", re.I)
+CODE_RE = re.compile(r"\b[A-Z]{2,8}(?:[- _]*[A-Z]{1,6}){0,2}[- _]*\d{2,4}(?:[- _]*[A-Z])?\b", re.I)
 ROOM_RE = re.compile(r"\b(?:room|rm|lab)\s*[:#-]?\s*([A-Z]{0,3}[- ]?\d{2,4}[A-Z]?)\b", re.I)
 
 

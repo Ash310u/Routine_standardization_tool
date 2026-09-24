@@ -58,7 +58,7 @@ def _unknown_code_name_lookup(raw: str, code: str, catalog: Catalog,
 def _duplicate_code_match(subjects: list[Subject]) -> Match:
     common = (subjects[0] if len({(subject.name.strip().casefold(), subject.subject_type)
                                   for subject in subjects}) == 1 else None)
-    return Match(None, 0, "duplicate_code", True,
+    return Match(None, 0, "shared_code" if common else "duplicate_code", not bool(common),
                  candidates=[(subject, 1) for subject in subjects[:3]], common_subject=common)
 
 
