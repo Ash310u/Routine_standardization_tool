@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "routine-standardizer"
+version = "0.1.0"
+description = "Convert college timetables into reviewable, standardized JSON"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "fastapi>=0.110,<1",
+  "uvicorn>=0.30,<1",
+  "python-multipart>=0.0.9",
+  "pydantic>=2,<3",
+  "openpyxl>=3.1,<4",
+  "PyMuPDF>=1.24,<2",
+  "rapidfuzz>=3,<4",
+  "Pillow>=10,<12",
+  "numpy>=1.26,<3",
+  "opencv-python-headless>=4.8,<5",
+]
+
+[project.optional-dependencies]
+ocr = ["paddleocr>=3,<4", "paddlepaddle>=3,<4"]
+handwriting = ["transformers>=4.45,<6", "torch>=2,<3"]
+semantic = ["sentence-transformers>=3,<6", "faiss-cpu>=1.8,<2"]
+test = ["pytest>=8,<10", "httpx>=0.27,<1"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

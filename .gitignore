@@ -1,0 +1,12 @@
+.venv/
+.venv313/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+artifacts/subject_index/
+artifacts/subject_index_nsec/
+viewer/node_modules/
+viewer/dist/
+Routines/
+output/
