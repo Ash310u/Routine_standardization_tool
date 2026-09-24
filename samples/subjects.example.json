@@ -1,0 +1,11 @@
+[
+  {
+    "name": "Data Structures and Algorithms",
+    "code": "PCC-CS301",
+    "aliases": ["DSA", "D.S.A", "Data Structure", "DS & Algo"],
+    "college": "Example College",
+    "department": "CSE",
+    "year": "2nd",
+    "semester": "3rd"
+  }
+]
