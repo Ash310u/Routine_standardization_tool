@@ -802,3 +802,12 @@ The goal is:
 > **Automatically process high-confidence routine data, detect
 > uncertainty reliably, and require human intervention only where the
 > system cannot safely determine the intended value.**
+
+------------------------------------------------------------------------
+
+# 14. Implementation Commit Rules
+
+- Commit each completed, independent feature or implementation section separately, including its related tests and documentation.
+- Name the change in the commit subject. Add a message body explaining what changed and why when the subject alone is insufficient.
+- Make as many commits as completed features justify, not one commit per line or trivial edit.
+- Do not include `Co-authored-by` trailers or credit Cursor, Codex, ChatGPT, or another AI tool in commit messages.

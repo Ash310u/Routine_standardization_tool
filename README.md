@@ -144,3 +144,10 @@ The `models/` directory is empty because no custom model was trained. PaddleOCR 
 .venv313/bin/python -m pip install -e '.[test]'
 .venv313/bin/pytest
 ```
+
+## Implementation commit rules
+
+- Commit each completed, independent feature or implementation section separately. Keep its related tests and documentation in the same commit.
+- Use a commit subject that names the change, and a message body that explains what changed and why when the subject alone is insufficient.
+- Make as many commits as the completed features justify; do not split work into commits for individual lines or trivial edits.
+- Do not add `Co-authored-by` trailers or credit Cursor, Codex, ChatGPT, or another AI tool in commit messages.
