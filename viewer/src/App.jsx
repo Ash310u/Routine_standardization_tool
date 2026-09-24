@@ -4,8 +4,14 @@ import { demoCases } from './demoData.js';
 const CAUSES = [
   { id: 'no_catalog_candidates', label: 'No catalog candidates', short: 'No candidates', tone: 'slate',
     description: 'No usable code was extracted, and the parsed context did not return a catalog candidate.' },
-  { id: 'unmatched_code', label: 'Code absent from catalog', short: 'Code absent', tone: 'rose',
-    description: 'A code was extracted, but its normalized form has no exact match in the saved catalog.' },
+  { id: 'unmatched_code', label: 'Code absent · no name', short: 'No name', tone: 'rose',
+    description: 'The extracted code is absent from the saved catalog. No usable subject name was available to check.' },
+  { id: 'code_absent_name_candidate', label: 'Code absent · name candidate', short: 'Name candidate', tone: 'orange',
+    description: 'The extracted code is absent, but the name matches or resembles a catalog subject. Its identity remains unresolved.' },
+  { id: 'code_and_name_absent', label: 'Code and name unresolved', short: 'No strong name', tone: 'pink',
+    description: 'The code is absent and the global embedding search found no name candidate above the provisional similarity threshold.' },
+  { id: 'name_not_checked', label: 'Code absent · name not checked', short: 'Name unchecked', tone: 'slate',
+    description: 'The code is absent, but the name lookup was not run or was not recorded in this older export.' },
   { id: 'non_subject_activity', label: 'Non-subject activity', short: 'Activity', tone: 'blue',
     description: 'The cell is an activity such as research hours rather than a catalog subject.' },
   { id: 'semantic', label: 'Semantic match needs review', short: 'Semantic review', tone: 'violet',
@@ -27,7 +33,22 @@ const categoryById = Object.fromEntries(CAUSES.map((cause) => [cause.id, cause])
 
 function categoryOf(record) {
   if (record.match_method === 'code') return record.requires_review ? 'code_concern' : 'accepted';
+  if (record.match_method === 'unmatched_code') {
+    if (record.name_lookup_status === 'exact_name_found' || record.name_lookup_status === 'similar_name_found') return 'code_absent_name_candidate';
+    if (record.name_lookup_status === 'no_strong_candidate') return 'code_and_name_absent';
+    if (record.name_lookup_status === 'index_unavailable' || !record.name_lookup_status) return 'name_not_checked';
+  }
   return categoryById[record.match_method] ? record.match_method : 'other';
+}
+
+function nameLookupLabel(record) {
+  return {
+    name_unavailable: 'No readable name to search',
+    index_unavailable: 'Embedding index not configured',
+    exact_name_found: 'Catalog name text found; code still conflicts',
+    similar_name_found: 'Similar name found; code still conflicts',
+    no_strong_candidate: 'No strong candidate in the saved index',
+  }[record.name_lookup_status] || 'Not recorded in this output';
 }
 
 function normalize(records) {
@@ -77,12 +98,13 @@ function Detail({ record }) {
       <div className="data-line"><span>Catalog name</span><strong>{display(record.subject_name)}</strong></div>
       <div className="data-line"><span>Catalog record ID</span><strong className="mono">{display(record.subject_master_id)}</strong></div>
       <div className="data-line"><span>Catalog context</span><strong>{[record.catalog_course, record.catalog_stream, record.catalog_semester].filter(Boolean).join(' / ') || '—'}</strong></div>
+      {record.match_method === 'unmatched_code' && <><div className="data-line"><span>Name lookup</span><strong>{nameLookupLabel(record)}</strong></div><div className="data-line"><span>Best name cosine</span><strong>{percent(record.cosine_similarity)}</strong></div><p className="confidence-note">Name candidates are review evidence. A low similarity score does not prove the subject is absent from every catalog.</p></>}
     </section>
     <section className="detail-section">
       <h3>Review flags <span className="small-count">{record.review_reasons?.length || 0}</span></h3>
       {record.review_reasons?.length ? <ul className="reason-list">{record.review_reasons.map((reason, index) => <li key={`${reason}-${index}`}><span className="reason-bullet" />{reason}</li>)}</ul> : <p className="muted">No review flag for this record.</p>}
     </section>
-    {candidates.length > 0 && <section className="detail-section"><h3>Candidate subjects</h3><div className="candidate-list">{candidates.slice(0, 3).map((candidate, index) => <div className="candidate" key={`${candidate.code}-${index}`}><div><strong>{candidate.name}</strong><span className="mono">{candidate.code}</span></div><b>{percent(candidate.score)}</b></div>)}</div></section>}
+    {candidates.length > 0 && <section className="detail-section"><h3>Candidate subjects</h3><div className="candidate-list">{candidates.slice(0, 3).map((candidate, index) => <div className="candidate" key={`${candidate.code}-${index}`}><div><strong>{candidate.name}</strong><span className="mono">{candidate.code}</span></div><b>{record.name_lookup_status === 'exact_name_found' ? 'Text match' : percent(candidate.score)}</b></div>)}</div></section>}
     <p className="confidence-note">Pipeline confidence: <strong>{percent(record.confidence)}</strong>. This is a heuristic score, not measured accuracy.</p>
   </aside>;
 }

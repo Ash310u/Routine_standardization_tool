@@ -207,6 +207,25 @@
           "default": null,
           "title": "Match Method"
         },
+        "name_lookup_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "name_unavailable",
+                "index_unavailable",
+                "exact_name_found",
+                "similar_name_found",
+                "no_strong_candidate"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name Lookup Status"
+        },
         "cosine_similarity": {
           "anyOf": [
             {

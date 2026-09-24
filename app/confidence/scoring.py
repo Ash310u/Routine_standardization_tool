@@ -7,6 +7,7 @@ from app.standardization.matcher import Match
 def score_class(item: ClassSession, match: Match, ocr_confidence: float | None = None) -> None:
     reasons = [reason for reason in item.review_reasons if reason != "unscored"]
     item.match_method = match.method
+    item.name_lookup_status = match.name_lookup_status
     item.cosine_similarity = round(match.similarity, 4) if match.similarity is not None else None
     item.match_margin = (round(match.similarity - match.runner_up_score, 4)
                          if match.similarity is not None and match.runner_up_score is not None else None)
@@ -31,6 +32,17 @@ def score_class(item: ClassSession, match: Match, ocr_confidence: float | None =
         reasons.append("Catalog subject record was not identified unambiguously")
     if match.context_mismatch:
         reasons.append("Matched code belongs to a different or unrecognized catalog context")
+    if match.method == "unmatched_code":
+        reasons.append("Extracted subject code is absent from the catalog")
+        name_reason = {
+            "name_unavailable": "No readable subject name was available for lookup",
+            "index_unavailable": "Subject name was not checked against an embedding index",
+            "exact_name_found": "Catalog name text was found, but its code conflicts with the extracted code",
+            "similar_name_found": "A similar catalog name exists, but its code conflicts with the extracted code",
+            "no_strong_candidate": "No strong name candidate was found in the embedding index",
+        }.get(match.name_lookup_status)
+        if name_reason:
+            reasons.append(name_reason)
     if match.ambiguous:
         reasons.append("Multiple subjects match")
     if match.method == "semantic":

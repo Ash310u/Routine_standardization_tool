@@ -134,6 +134,47 @@ def test_code_lookup_precedes_context_and_name_guessing():
     unknown = match_subject("Machine Learning", "NOT-IN-CATALOG", catalog,
                             college=None, department="CSE", year="4th", semester="7th")
     assert unknown.subject is None and unknown.method == "unmatched_code"
+    assert unknown.name_lookup_status == "exact_name_found"
+    assert unknown.candidates[0][0].code == "PECCS701E"
+
+
+def test_unknown_code_name_diagnostic_keeps_canonical_fields_empty():
+    from app.schemas.models import ClassSession
+    from app.standardization.matcher import match_subject
+
+    class FakeIndex:
+        def search(self, text, candidates, **kwargs):
+            assert kwargs["course"] is None and kwargs["department"] is None
+            assert len(candidates) == 1
+            return [(candidates[0], 0.25)]
+
+    catalog = Catalog([Subject(name="Machine Learning", code="ML701", department="CSE")])
+    match = match_subject("Quantum Basket Weaving", "ZZ999", catalog, college=None,
+                          department="Other Stream", year=None, semester="7th",
+                          semantic=FakeIndex())
+    assert match.subject is None and match.name_lookup_status == "no_strong_candidate"
+    item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
+                        subject_raw="Quantum Basket Weaving", subject_code_raw="ZZ999",
+                        source="native", confidence=0)
+    score_class(item, match)
+    assert item.subject_name is None and item.subject_code is None
+    assert item.subject_master_id is None and item.requires_review
+    assert item.cosine_similarity == 0.25 and item.match_candidates[0].code == "ML701"
+
+    code_only = match_subject("ZZ999", "ZZ999", catalog, college=None,
+                              department=None, year=None, semester=None, semantic=FakeIndex())
+    assert code_only.name_lookup_status == "name_unavailable"
+    assert code_only.candidates is None
+
+    unchecked = match_subject("Quantum Basket Weaving", "ZZ999", catalog, college=None,
+                               department=None, year=None, semester=None)
+    assert unchecked.name_lookup_status == "index_unavailable"
+
+    contained = match_subject("PEC- (Cloud Computing", "ZZ999",
+                              Catalog([Subject(name="Cloud Computing", code="CC301")]),
+                              college=None, department=None, year=None, semester=None,
+                              semantic=FakeIndex())
+    assert contained.subject is None and contained.name_lookup_status == "exact_name_found"
 
 
 def test_code_match_ignores_group_and_room_notes():

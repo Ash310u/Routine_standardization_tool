@@ -25,6 +25,34 @@ class Match:
     candidates: list[tuple[Subject, float]] | None = None
     context_mismatch: bool = False
     common_subject: Subject | None = None
+    name_lookup_status: str | None = None
+
+
+def _unknown_code_name_lookup(raw: str, code: str, catalog: Catalog,
+                              semantic: "SemanticIndex | None") -> Match:
+    # An absent code is never replaced with a name-only match. Search the
+    # global catalog for review evidence, even when the parsed context is wrong.
+    needle = normalize(raw)
+    if needle == normalize(code) or len(re.findall(r"[A-Za-z]", raw)) < 4:
+        return Match(None, 0, "unmatched_code", name_lookup_status="name_unavailable")
+    exact = [subject for subject in catalog.subjects
+             if any((alias_key := normalize(alias)) == needle or
+                    (len(alias_key) >= 10 and alias_key in needle)
+                    for alias in [subject.name, *subject.aliases])]
+    if exact:
+        return Match(None, 0, "unmatched_code", candidates=[(subject, 1) for subject in exact[:3]],
+                     name_lookup_status="exact_name_found")
+    if semantic is None:
+        return Match(None, 0, "unmatched_code", name_lookup_status="index_unavailable")
+    hits = semantic.search(raw, catalog.subjects, course=None, department=None,
+                           semester=None, top_k=3)
+    if not hits:
+        return Match(None, 0, "unmatched_code", name_lookup_status="index_unavailable")
+    best = hits[0][1]
+    return Match(None, 0, "unmatched_code", similarity=best,
+                 runner_up_score=hits[1][1] if len(hits) > 1 else None,
+                 candidates=hits,
+                 name_lookup_status="similar_name_found" if best >= 0.68 else "no_strong_candidate")
 
 
 def _duplicate_code_match(subjects: list[Subject]) -> Match:
@@ -44,7 +72,7 @@ def match_subject(raw: str, code: str | None, catalog: Catalog, *, college: str 
     if code:
         global_matches = catalog.code_matches(code)
         if not global_matches:
-            return Match(None, 0, "unmatched_code")
+            return _unknown_code_name_lookup(raw, code, catalog, semantic)
         scoped = [subject for subject in global_matches if subject in candidates]
         if len(scoped) == 1:
             return Match(scoped[0], 1, "code")

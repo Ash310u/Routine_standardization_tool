@@ -38,6 +38,8 @@ class ClassSession(BaseModel):
     subject_code: str | None = None
     subject_master_id: int | None = None
     match_method: str | None = None
+    name_lookup_status: Literal["name_unavailable", "index_unavailable", "exact_name_found",
+                                "similar_name_found", "no_strong_candidate"] | None = None
     cosine_similarity: float | None = Field(default=None, ge=-1, le=1)
     match_margin: float | None = None
     match_candidates: list[MatchSuggestion] = Field(default_factory=list)

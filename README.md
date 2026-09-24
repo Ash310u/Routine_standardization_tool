@@ -48,6 +48,8 @@ The saved [TINT subject response](samples/subjects.tint.json) is loaded locally.
 
 The result is `output/TINT_semantic/Odd sem 2026-27.xlsx.json`. Index building downloads a pretrained embedding model on first use and saves a local copy with the FAISS index. Conversions use the saved model and index without contacting the subject API or model hub. Rebuild the index when the catalog, aliases, or embedding model changes.
 
+When an extracted code is absent from the catalog, the pipeline keeps `subject_name`, `subject_code`, and `subject_master_id` empty. It checks a separate readable name against the global saved catalog: exact name or alias, or a catalog name contained in longer cell text, then cosine search in the local embedding index. The JSON `name_lookup_status` distinguishes `name_unavailable`, `index_unavailable`, `exact_name_found`, `similar_name_found`, and `no_strong_candidate`; `cosine_similarity` and `match_candidates` show search evidence where available. The 0.68 similarity cutoff is provisional. A low score means no *strong* candidate was found in this index; it cannot prove the subject is absent. These cases remain flagged for review.
+
 On the supplied workbook, this command currently produces 934 class records across four worksheets. It flags 714 records for review and leaves 220 without review flags. These figures measure the pipeline's own decisions, not verified accuracy. For example, `2nd year!B4` maps `PCC-CS301` to catalog subject 927 (`Data Structure & Algorithms`), while `2nd year!C153` maps `PCCDS 301` to `Introduction to Data Science` but flags the different department label for review.
 
 The workbook contains repeated timetable blocks across four worksheets. The parser keeps department, year, semester, and section on each class; root metadata is empty when it differs across blocks. It merges repeated Excel cells across periods and flags corrected AM/PM headers. Cells with multiple subject codes remain reviewable. **Check output against the workbook before using it operationally.** Automatic matching thresholds have not been calibrated on labeled examples.
@@ -109,7 +111,7 @@ export ROUTINE_SEMANTIC_INDEX="$PWD/artifacts/subject_index"
 
 ## Review case viewer
 
-The separate React viewer in [viewer/](viewer/) opens with fictional examples of every current review cause, including the historical fuzzy-code case. It color-codes causes and supports search, cause, status, and department filters. Click a case to see its raw text, extracted code, catalog result, review reasons, and candidate subjects. It has no login or database.
+The separate React viewer in [viewer/](viewer/) opens with fictional examples of every current review cause, including the historical fuzzy-code case. It distinguishes an absent code with no readable name, an absent code with a name candidate, and an absent code with no strong name candidate. An unknown code that remains unmatched is a safe expected result, even though it still requires human review. It color-codes causes and supports search, cause, status, and department filters. Click a case to see its raw text, extracted code, catalog result, review reasons, and candidate subjects. Older JSON exports without `name_lookup_status` appear as “name not checked”; rerun conversion to see the new diagnostics. It has no login or database.
 
 ```bash
 cd /home/ass/src/routine_reader/viewer
