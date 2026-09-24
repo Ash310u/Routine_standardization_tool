@@ -40,7 +40,7 @@ def test_grid_and_review_policy():
     assert routine.semester == "3"
     assert len(routine.classes) == 2
     assert routine.classes[0].subject_raw == "DSA"
-    assert routine.classes[0].subject_code_raw == "PCC-CS301"
+    assert routine.classes[0].subject_code == "PCC-CS301"
     subject = Subject(name="Data Structures and Algorithms", code="PCC-CS301", aliases=["DSA"])
     score_class(routine.classes[0], Match(subject, 1, "code"))
     assert routine.classes[0].requires_review is False
@@ -54,11 +54,29 @@ def test_code_subject_conflict_requires_review():
     from app.schemas.models import ClassSession
 
     session = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
-                           subject_raw=item.text, subject_code_raw="PCC-CS301",
+                           subject_raw=item.text, subject_code="PCC-CS301",
                            source="native", confidence=0)
     score_class(session, Match(subject, 1, "code"))
     assert session.requires_review
     assert any("conflicts" in reason for reason in session.review_reasons)
+
+
+def test_separator_only_code_difference_uses_one_catalog_code_without_review():
+    from app.schemas.models import ClassSession
+    from app.standardization.matcher import match_subject
+
+    catalog = Catalog([Subject(name="Programming for Problem Solving", code="ESCS201",
+                               subject_master_id=348, department="CSE", semester="2nd")])
+    for extracted in ("ESCS201", "ESCS 201", "ESCS-201", "ESCS_201", "ESCS - _ 201"):
+        match = match_subject(extracted, extracted, catalog, college=None,
+                              department="CSE", year=None, semester="2nd")
+        item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
+                            subject_raw=extracted, subject_code=extracted,
+                            source="native", confidence=0)
+        score_class(item, match)
+        assert item.subject_code == "ESCS201"
+        assert "subject_code_raw" not in item.model_dump()
+        assert item.review_reasons == [] and not item.requires_review
 
 
 def test_context_filter():
@@ -105,7 +123,7 @@ def test_tint_workbook_keeps_block_context_and_repairs_time():
     assert routine.course is None  # The workbook mixes undergraduate and M.Tech blocks.
     first = next(item for item in routine.classes if item.cell_ref == "2nd year!B4")
     assert (first.department, first.semester, first.section) == ("CSE", "3rd", "1")
-    assert (first.start_time, first.end_time, first.subject_code_raw, first.faculty_raw) == (
+    assert (first.start_time, first.end_time, first.subject_code, first.faculty_raw) == (
         "09:30", "10:25", "PCC-CS301", "MB2")
     corrected = next(item for item in routine.classes if item.cell_ref == "2nd year!C4")
     assert (corrected.start_time, corrected.end_time) == ("10:25", "11:20")
@@ -113,7 +131,7 @@ def test_tint_workbook_keeps_block_context_and_repairs_time():
     postgraduate = next(item for item in routine.classes if item.cell_ref == "M.tech!G16")
     assert (postgraduate.course, postgraduate.department, postgraduate.semester) == ("M.Tech", "CSE", "3rd")
     revision = next(item for item in routine.classes if item.cell_ref == "2nd year!J153")
-    assert revision.subject_code_raw == "ESCS 201"
+    assert revision.subject_code == "ESCS 201"
 
 
 def test_code_lookup_precedes_context_and_name_guessing():
@@ -131,7 +149,7 @@ def test_code_lookup_precedes_context_and_name_guessing():
     assert match.subject is catalog.subjects[0]
     assert match.context_mismatch
     item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
-                        subject_raw="PCCDS 301", subject_code_raw="PCCDS 301",
+                        subject_raw="PCCDS 301", subject_code="PCCDS 301",
                         department="CSE(Data Science)", semester="3rd",
                         source="native", confidence=0)
     score_class(item, match)
@@ -164,11 +182,12 @@ def test_unknown_code_name_diagnostic_keeps_canonical_fields_empty():
                           semantic=FakeIndex())
     assert match.subject is None and match.name_lookup_status == "no_strong_candidate"
     item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
-                        subject_raw="Quantum Basket Weaving", subject_code_raw="ZZ999",
+                        subject_raw="Quantum Basket Weaving", subject_code="ZZ999",
                         source="native", confidence=0)
     score_class(item, match)
-    assert item.subject_name is None and item.subject_code is None
+    assert item.subject_name is None and item.subject_code == "ZZ999"
     assert item.subject_master_id is None and item.requires_review
+    assert "subject_code_raw" not in item.model_dump()
     assert item.cosine_similarity == 0.25 and item.match_candidates[0].code == "ML701"
 
     code_only = match_subject("ZZ999", "ZZ999", catalog, college=None,
@@ -198,7 +217,7 @@ def test_code_match_ignores_group_and_room_notes():
                           college=None, department="CSE", year="2nd", semester="3rd")
     item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
                         subject_raw="Analog and digital lab (R-318) Gr-A",
-                        subject_code_raw="ESC-391", source="native", confidence=0)
+                        subject_code="ESC-391", source="native", confidence=0)
     score_class(item, match)
     assert item.subject_name == "Analog and Digital Electronics"
     assert item.review_reasons == []
@@ -216,6 +235,14 @@ def test_duplicate_code_without_resolving_context_stays_ambiguous():
     assert match.subject is None
     assert match.method == "duplicate_code"
     assert match.ambiguous
+    from app.schemas.models import ClassSession
+
+    item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
+                        subject_raw="BSC 301", subject_code="BSC 301",
+                        source="native", confidence=0)
+    score_class(item, match)
+    assert item.subject_code == "BSC301"
+    assert item.subject_name is None and item.requires_review
 
 
 def test_duplicate_code_with_shared_name_returns_name_without_record_id():
@@ -233,7 +260,7 @@ def test_duplicate_code_with_shared_name_returns_name_without_record_id():
     assert match.subject is None and match.common_subject is not None
     assert match.method == "shared_code" and not match.ambiguous
     item = ClassSession(day="Monday", start_time="09:00", end_time="10:00",
-                        subject_raw="ESCS 201", subject_code_raw="ESCS 201",
+                        subject_raw="ESCS 201", subject_code="ESCS 201",
                         source="native", confidence=0)
     score_class(item, match)
     assert (item.subject_name, item.subject_code, item.subject_type) == (

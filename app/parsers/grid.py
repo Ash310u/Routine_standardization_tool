@@ -91,7 +91,7 @@ def parse_grid(grid: Grid, routine: Routine) -> list[Routine]:
                     reasons.append("Time header required AM/PM correction")
                 routine.classes.append(ClassSession(
                     day=current_day, start_time=period[0], end_time=periods[last][1],
-                    subject_raw=subject or code or value, subject_code_raw=code,
+                    subject_raw=subject or code or value, subject_code=code,
                     college=context.college, course=context.course,
                     department=context.department, year=context.year,
                     semester=context.semester, section=context.section,

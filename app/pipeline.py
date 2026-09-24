@@ -71,7 +71,7 @@ class Pipeline:
             routine.warnings.append("No canonical subject catalog configured; all classes require review")
         cells = {(c.page, c.cell_ref, c.bbox): c for grid in grids for row in grid.rows for c in row}
         for item in routine.classes:
-            matched = match_subject(item.subject_raw, item.subject_code_raw, self.catalog,
+            matched = match_subject(item.subject_raw, item.subject_code, self.catalog,
                                     college=item.college, department=item.department,
                                     year=item.year, semester=item.semester,
                                     course=item.course, semantic=self.semantic)

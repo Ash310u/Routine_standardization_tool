@@ -3,7 +3,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!B12', day: 'Monday', start_time: '09:30', end_time: '10:25',
     department: 'CSE(Data Science)', semester: '3rd', section: 'A',
-    subject_raw: 'Soft Skill', subject_code_raw: null, subject_name: null,
+    subject_raw: 'Soft Skill', subject_name: null,
     subject_code: null, subject_master_id: null, match_method: 'no_catalog_candidates',
     confidence: 0.49, requires_review: true,
     review_reasons: ['Catalog subject record was not identified unambiguously'],
@@ -12,8 +12,8 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!C12', day: 'Monday', start_time: '10:25', end_time: '11:20',
     department: 'CSE', semester: '3rd', section: 'A',
-    subject_raw: 'RC-CSE-301', subject_code_raw: 'RC-CSE-301', subject_name: null,
-    subject_code: null, subject_master_id: null, match_method: 'unmatched_code',
+    subject_raw: 'RC-CSE-301', subject_name: null,
+    subject_code: 'RC-CSE-301', subject_master_id: null, match_method: 'unmatched_code',
     name_lookup_status: 'name_unavailable',
     confidence: 0.49, requires_review: true,
     review_reasons: ['Catalog subject record was not identified unambiguously'],
@@ -22,8 +22,8 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!D12', day: 'Monday', start_time: '11:20', end_time: '12:15',
     department: 'CSE', semester: '7th', section: 'A',
-    subject_raw: 'Machine Learning', subject_code_raw: 'OLD-CS701', subject_name: null,
-    subject_code: null, subject_master_id: null, match_method: 'unmatched_code',
+    subject_raw: 'Machine Learning', subject_name: null,
+    subject_code: 'OLD-CS701', subject_master_id: null, match_method: 'unmatched_code',
     name_lookup_status: 'exact_name_found', confidence: 0.49, requires_review: true,
     match_candidates: [{ name: 'Machine Learning', code: 'PECCS701E', score: 1 }],
     review_reasons: ['Extracted subject code is absent from the catalog', 'Catalog name text was found, but its code conflicts with the extracted code'],
@@ -32,8 +32,8 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!E12', day: 'Monday', start_time: '12:15', end_time: '13:10',
     department: 'CSE', semester: '7th', section: 'A',
-    subject_raw: 'Quantum Basket Weaving', subject_code_raw: 'ZZ-CS999', subject_name: null,
-    subject_code: null, subject_master_id: null, match_method: 'unmatched_code',
+    subject_raw: 'Quantum Basket Weaving', subject_name: null,
+    subject_code: 'ZZ-CS999', subject_master_id: null, match_method: 'unmatched_code',
     name_lookup_status: 'no_strong_candidate', cosine_similarity: 0.23,
     confidence: 0.49, requires_review: true,
     match_candidates: [{ name: 'Machine Learning', code: 'PECCS701E', score: 0.23 }],
@@ -43,8 +43,8 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!F12', day: 'Monday', start_time: '13:10', end_time: '14:05',
     department: 'CSE', semester: '7th', section: 'A',
-    subject_raw: 'Emerging Systems', subject_code_raw: 'NEW-CS704', subject_name: null,
-    subject_code: null, subject_master_id: null, match_method: 'unmatched_code',
+    subject_raw: 'Emerging Systems', subject_name: null,
+    subject_code: 'NEW-CS704', subject_master_id: null, match_method: 'unmatched_code',
     name_lookup_status: 'index_unavailable', confidence: 0.49, requires_review: true,
     review_reasons: ['Extracted subject code is absent from the catalog', 'Subject name was not checked against an embedding index'],
     scenario_note: 'A readable name exists, but this run had no embedding index. The viewer does not label the name absent without a search.',
@@ -52,7 +52,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!K12', day: 'Monday', start_time: '17:00', end_time: '17:30',
     department: 'CSE', semester: '3rd', section: 'A',
-    subject_raw: 'Extended Research Hours and College Activity', subject_code_raw: null,
+    subject_raw: 'Extended Research Hours and College Activity',
     subject_name: null, subject_code: null, subject_master_id: null,
     match_method: 'non_subject_activity', confidence: 0.49, requires_review: true,
     review_reasons: ['Catalog subject record was not identified unambiguously'],
@@ -61,7 +61,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!G18', day: 'Tuesday', start_time: '13:40', end_time: '15:20',
     department: 'M.Tech CSE', semester: '3rd', section: 'A',
-    subject_raw: 'Project', subject_code_raw: null, subject_name: 'Project – Part 1',
+    subject_raw: 'Project', subject_name: 'Project – Part 1',
     subject_code: 'PGCSE393', subject_master_id: 1861, match_method: 'semantic',
     cosine_similarity: 0.6891, confidence: 0.672, requires_review: true,
     review_reasons: ['Semantic match needs validation until thresholds are calibrated'],
@@ -75,7 +75,7 @@ export const demoCases = [
     cell_ref: 'Demo sheet!G22', day: 'Wednesday', start_time: '13:40', end_time: '15:20',
     department: 'CSE', semester: '3rd', section: 'B',
     subject_raw: 'Analog and digital lab (R-318) Gr-A / Hardware lab Gr-B',
-    subject_code_raw: 'ESC-391', subject_name: 'Analog and Digital Electronics',
+    subject_name: 'Analog and Digital Electronics',
     subject_code: 'ESC391', subject_master_id: 931, match_method: 'code',
     catalog_course: 'B.Tech', catalog_stream: 'CSE', catalog_semester: '3rd',
     confidence: 1, requires_review: true,
@@ -85,7 +85,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!C24', day: 'Thursday', start_time: '10:25', end_time: '11:20',
     department: 'CSE', semester: '3rd', section: 'A',
-    subject_raw: 'BSC-301', subject_code_raw: 'BSC-301', subject_name: 'Mathematics-III',
+    subject_raw: 'BSC-301', subject_name: 'Mathematics-III',
     subject_code: 'BSC301', subject_master_id: 929, match_method: 'code',
     catalog_course: 'B.Tech', catalog_stream: 'CSE', catalog_semester: '3rd',
     confidence: 1, requires_review: true,
@@ -95,8 +95,8 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!I28', day: 'Friday', start_time: '15:20', end_time: '16:10',
     department: 'CSE(Data Science)', semester: '3rd', section: 'A',
-    subject_raw: 'BSC 301', subject_code_raw: 'BSC 301', subject_name: null,
-    subject_code: null, subject_master_id: null, match_method: 'duplicate_code',
+    subject_raw: 'BSC 301', subject_name: null,
+    subject_code: 'BSC301', subject_master_id: null, match_method: 'duplicate_code',
     confidence: 0.49, requires_review: true,
     review_reasons: ['Catalog subject record was not identified unambiguously', 'Multiple subjects match'],
     match_candidates: [
@@ -108,7 +108,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!J31', day: 'Friday', start_time: '16:10', end_time: '17:00',
     department: 'CSE(Data Science)', semester: '3rd', section: 'A',
-    subject_raw: 'ESCS 201', subject_code_raw: 'ESCS 201',
+    subject_raw: 'ESCS 201',
     subject_name: 'Programming for Problem Solving', subject_code: 'ESCS201',
     subject_master_id: null, match_method: 'shared_code', confidence: 0.49,
     requires_review: true,
@@ -118,7 +118,7 @@ export const demoCases = [
   {
     cell_ref: 'Demo sheet!B33', day: 'Saturday', start_time: '09:30', end_time: '10:25',
     department: 'CSE', semester: '7th', section: 'A',
-    subject_raw: 'Machine Learning', subject_code_raw: 'PECCS701 E',
+    subject_raw: 'Machine Learning',
     subject_name: 'Machine Learning', subject_code: 'PECCS701E',
     subject_master_id: 945, match_method: 'code',
     catalog_course: 'B.Tech', catalog_stream: 'CSE', catalog_semester: '7th',
@@ -130,7 +130,7 @@ export const demoCases = [
 demoCases.push({
   cell_ref: 'Historical example!I7', day: 'Friday', start_time: '15:20', end_time: '16:10',
   department: 'CSE', semester: '7th', section: 'A',
-  subject_raw: 'E (Machine Learning', subject_code_raw: 'PECCS701',
+  subject_raw: 'E (Machine Learning',
   subject_name: 'Machine Learning', subject_code: 'PECCS701E',
   subject_master_id: 945, match_method: 'fuzzy', confidence: 0.88,
   requires_review: true,

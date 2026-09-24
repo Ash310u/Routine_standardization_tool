@@ -6,6 +6,7 @@ from app.standardization.matcher import Match
 
 def score_class(item: ClassSession, match: Match, ocr_confidence: float | None = None) -> None:
     reasons = [reason for reason in item.review_reasons if reason != "unscored"]
+    extracted_code = item.subject_code
     item.match_method = match.method
     item.name_lookup_status = match.name_lookup_status
     item.cosine_similarity = round(match.similarity, 4) if match.similarity is not None else None
@@ -29,6 +30,8 @@ def score_class(item: ClassSession, match: Match, ocr_confidence: float | None =
             item.subject_name = match.common_subject.name
             item.subject_code = match.common_subject.code
             item.subject_type = match.common_subject.subject_type
+        elif match.method == "duplicate_code" and match.candidates:
+            item.subject_code = match.candidates[0][0].code
         reasons.append("Catalog subject record was not identified unambiguously")
     if match.context_mismatch:
         reasons.append("Matched code belongs to a different or unrecognized catalog context")
@@ -57,13 +60,13 @@ def score_class(item: ClassSession, match: Match, ocr_confidence: float | None =
         reasons.append("Source text was not confirmed")
     if ocr_confidence is not None and ocr_confidence < 0.85:
         reasons.append("Low OCR confidence")
-    if item.subject_code_raw and item.subject_code and _norm(item.subject_code_raw) != _norm(item.subject_code):
+    if extracted_code and item.subject_code and _norm(extracted_code) != _norm(item.subject_code):
         reasons.append("Extracted code conflicts with canonical code")
     if (match.method != "code" and match.subject and item.subject_raw and "lab" in item.subject_raw.lower()
             and match.subject.subject_type and "lab" not in match.subject.subject_type.lower()):
         reasons.append("Extracted lab text conflicts with canonical subject type")
     if (match.method == "code" and match.subject and item.subject_raw.strip()
-            and _norm(item.subject_raw) != _norm(item.subject_code_raw or "")):
+            and _norm(item.subject_raw) != _norm(extracted_code or "")):
         from difflib import SequenceMatcher
         import re
 

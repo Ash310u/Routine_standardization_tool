@@ -34,7 +34,6 @@ class ClassSession(BaseModel):
     catalog_course: str | None = None
     catalog_stream: str | None = None
     catalog_semester: str | None = None
-    subject_code_raw: str | None = None
     subject_code: str | None = None
     subject_master_id: int | None = None
     match_method: str | None = None

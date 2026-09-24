@@ -159,18 +159,6 @@
           "default": null,
           "title": "Catalog Semester"
         },
-        "subject_code_raw": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Subject Code Raw"
-        },
         "subject_code": {
           "anyOf": [
             {
