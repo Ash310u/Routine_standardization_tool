@@ -30,6 +30,24 @@ const CAUSES = [
 
 const PAGE_SIZE = 12;
 const categoryById = Object.fromEntries(CAUSES.map((cause) => [cause.id, cause]));
+const NAME_LOOKUPS = [
+  { id: 'all', label: 'All name lookups' },
+  { id: 'unknown_code', label: 'All absent codes' },
+  { id: 'name_unavailable', label: 'No readable name' },
+  { id: 'exact_name_found', label: 'Catalog name text found' },
+  { id: 'similar_name_found', label: 'Similar name found' },
+  { id: 'no_strong_candidate', label: 'No strong name candidate' },
+  { id: 'index_unavailable', label: 'Index not configured' },
+  { id: 'not_recorded', label: 'Lookup not recorded' },
+];
+
+function hasNameLookup(record, selected) {
+  if (selected === 'all') return true;
+  if (record.match_method !== 'unmatched_code') return false;
+  if (selected === 'unknown_code') return true;
+  if (selected === 'not_recorded') return !record.name_lookup_status;
+  return record.name_lookup_status === selected;
+}
 
 function categoryOf(record) {
   if (record.match_method === 'code') return record.requires_review ? 'code_concern' : 'accepted';
@@ -114,6 +132,7 @@ export default function App() {
   const [sourceName, setSourceName] = useState('Fictional examples');
   const [mode, setMode] = useState('demo');
   const [category, setCategory] = useState('all');
+  const [nameLookup, setNameLookup] = useState('all');
   const [status, setStatus] = useState('all');
   const [department, setDepartment] = useState('all');
   const [query, setQuery] = useState('');
@@ -129,16 +148,18 @@ export default function App() {
 
   const filtered = useMemo(() => records.filter((record) => {
     if (category !== 'all' && record._category !== category) return false;
+    if (!hasNameLookup(record, nameLookup)) return false;
     if (status === 'review' && !record.requires_review) return false;
     if (status === 'accepted' && record.requires_review) return false;
     if (department !== 'all' && record.department !== department) return false;
     if (!query.trim()) return true;
     const haystack = [record.cell_ref, record.subject_raw, record.subject_code_raw, record.subject_name,
-      record.subject_code, record.department, record.semester, ...(record.review_reasons || [])].join(' ').toLowerCase();
+      record.subject_code, record.department, record.semester, record.name_lookup_status,
+      categoryById[record._category]?.label, ...(record.review_reasons || [])].join(' ').toLowerCase();
     return haystack.includes(query.trim().toLowerCase());
-  }), [records, category, status, department, query]);
+  }), [records, category, nameLookup, status, department, query]);
 
-  useEffect(() => { setPage(1); setSelectedId(null); }, [category, status, department, query, records]);
+  useEffect(() => { setPage(1); setSelectedId(null); }, [category, nameLookup, status, department, query, records]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const selected = filtered.find((record) => record._id === selectedId) || visible[0];
@@ -152,7 +173,7 @@ export default function App() {
       setRecords(normalize(parsed.classes));
       setSourceName(file.name);
       setMode('file');
-      setCategory('all'); setStatus('all'); setDepartment('all'); setQuery('');
+      setCategory('all'); setNameLookup('all'); setStatus('all'); setDepartment('all'); setQuery('');
       setError('');
     } catch (caught) {
       setError(`Could not load JSON: ${caught.message}`);
@@ -163,7 +184,7 @@ export default function App() {
 
   function resetDemo() {
     setRecords(normalize(demoCases)); setSourceName('Fictional examples'); setMode('demo');
-    setCategory('all'); setStatus('all'); setDepartment('all'); setQuery(''); setError('');
+    setCategory('all'); setNameLookup('all'); setStatus('all'); setDepartment('all'); setQuery(''); setError('');
   }
 
   return <div className="app-shell">
@@ -176,7 +197,7 @@ export default function App() {
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
       <div className="metrics"><div className="metric"><span>Records in view</span><strong>{records.length.toLocaleString()}</strong><small>{mode === 'demo' ? 'fictional records' : 'loaded from JSON'}</small></div><div className="metric"><span>Need review</span><strong className="accent-amber">{reviewCount.toLocaleString()}</strong><small>{records.length ? percent(reviewCount / records.length) : '0%'} of records</small></div><div className="metric"><span>Code matched</span><strong className="accent-blue">{codeMatchCount.toLocaleString()}</strong><small>unique catalog records</small></div><div className="metric"><span>Accepted</span><strong className="accent-green">{(records.length - reviewCount).toLocaleString()}</strong><small>without a review flag</small></div></div>
       <section className="cause-section"><div className="section-heading"><div><span className="section-kicker">01 / OVERVIEW</span><h2>Browse by main cause</h2></div><p>Choose a cause to filter the case list.</p></div><div className="cause-grid">{CAUSES.filter((cause) => cause.id !== 'other' || totals.other > 0).map((cause) => <button key={cause.id} className={`cause-card ${category === cause.id ? 'is-active' : ''}`} data-tone={cause.tone} onClick={() => setCategory(category === cause.id ? 'all' : cause.id)} aria-pressed={category === cause.id}><span className="cause-top"><span className="cause-icon">{cause.id === 'accepted' ? '✓' : cause.id === 'duplicate_code' ? 'Ⅱ' : '!'}</span><span className="cause-number">{totals[cause.id]}</span></span><strong>{cause.label}</strong><span className="cause-foot">View cases <span aria-hidden="true">↗</span></span></button>)}</div></section>
-      <section className="workspace"><div className="section-heading"><div><span className="section-kicker">02 / CASES</span><h2>Flagged cell explorer</h2></div><p>Click a row for the code, catalog match, and review reasons.</p></div><div className="work-grid"><div className="list-panel"><div className="filter-bar"><label className="search"><span aria-hidden="true">⌕</span><input placeholder="Search code, subject, cell, reason…" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search cases" /></label><select value={department} onChange={(event) => setDepartment(event.target.value)} aria-label="Filter by department"><option value="all">All departments</option>{departments.map((name) => <option key={name} value={name}>{name}</option>)}</select></div><div className="filter-subrow"><div className="segmented" aria-label="Filter by review status"><button className={status === 'all' ? 'on' : ''} onClick={() => setStatus('all')}>All</button><button className={status === 'review' ? 'on' : ''} onClick={() => setStatus('review')}>Needs review</button><button className={status === 'accepted' ? 'on' : ''} onClick={() => setStatus('accepted')}>Accepted</button></div><span>{filtered.length.toLocaleString()} case{filtered.length === 1 ? '' : 's'} shown</span></div><div className="table-head"><span>RAW CELL / LOCATION</span><span>CATALOG RESULT</span><span>CAUSE</span><span>STATUS</span></div><div className="rows">{visible.length ? visible.map((record) => <button key={record._id} className={`case-row ${selected?._id === record._id ? 'selected' : ''}`} onClick={() => setSelectedId(record._id)}><span className="row-source"><strong>{display(record.subject_raw)}</strong><small className="mono">{display(record.cell_ref || (record.page && `Page ${record.page}`))} · {display(record.subject_code_raw)}</small></span><span className="row-match"><strong>{display(record.subject_name)}</strong><small className="mono">{display(record.subject_code)}</small></span><span><Marker category={record._category} /></span><span><Status record={record} /></span></button>) : <div className="no-results"><strong>No cases match these filters.</strong><p>Try another cause, department, or search term.</p><button className="text-button" onClick={() => { setCategory('all'); setStatus('all'); setDepartment('all'); setQuery(''); }}>Clear filters</button></div>}</div><div className="pagination"><span>Page {page} of {pageCount}</span><div><button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} aria-label="Previous page">←</button><button onClick={() => setPage(Math.min(pageCount, page + 1))} disabled={page === pageCount} aria-label="Next page">→</button></div></div></div><Detail record={selected} /></div></section>
+      <section className="workspace"><div className="section-heading"><div><span className="section-kicker">02 / CASES</span><h2>Flagged cell explorer</h2></div><p>Click a row for the code, catalog match, and review reasons.</p></div><div className="work-grid"><div className="list-panel"><div className="filter-bar"><label className="search"><span aria-hidden="true">⌕</span><input placeholder="Search code, subject, cell, reason…" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search cases" /></label><select value={department} onChange={(event) => setDepartment(event.target.value)} aria-label="Filter by department"><option value="all">All departments</option>{departments.map((name) => <option key={name} value={name}>{name}</option>)}</select></div><div className="filter-pickers"><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by cause"><option value="all">All causes</option>{CAUSES.map((cause) => <option key={cause.id} value={cause.id}>{cause.label} ({totals[cause.id]})</option>)}</select><select value={nameLookup} onChange={(event) => setNameLookup(event.target.value)} aria-label="Filter by name lookup">{NAME_LOOKUPS.map((lookup) => <option key={lookup.id} value={lookup.id}>{lookup.label}</option>)}</select></div><div className="filter-subrow"><div className="segmented" aria-label="Filter by review status"><button className={status === 'all' ? 'on' : ''} onClick={() => setStatus('all')}>All</button><button className={status === 'review' ? 'on' : ''} onClick={() => setStatus('review')}>Needs review</button><button className={status === 'accepted' ? 'on' : ''} onClick={() => setStatus('accepted')}>Accepted</button></div><span>{filtered.length.toLocaleString()} case{filtered.length === 1 ? '' : 's'} shown</span></div><div className="table-head"><span>RAW CELL / LOCATION</span><span>CATALOG RESULT</span><span>CAUSE</span><span>STATUS</span></div><div className="rows">{visible.length ? visible.map((record) => <button key={record._id} className={`case-row ${selected?._id === record._id ? 'selected' : ''}`} onClick={() => setSelectedId(record._id)}><span className="row-source"><strong>{display(record.subject_raw)}</strong><small className="mono">{display(record.cell_ref || (record.page && `Page ${record.page}`))} · {display(record.subject_code_raw)}</small></span><span className="row-match"><strong>{display(record.subject_name)}</strong><small className="mono">{display(record.subject_code)}</small></span><span><Marker category={record._category} /></span><span><Status record={record} /></span></button>) : <div className="no-results"><strong>No cases match these filters.</strong><p>Try another cause, department, or search term.</p><button className="text-button" onClick={() => { setCategory('all'); setNameLookup('all'); setStatus('all'); setDepartment('all'); setQuery(''); }}>Clear filters</button></div>}</div><div className="pagination"><span>Page {page} of {pageCount}</span><div><button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} aria-label="Previous page">←</button><button onClick={() => setPage(Math.min(pageCount, page + 1))} disabled={page === pageCount} aria-label="Next page">→</button></div></div></div><Detail record={selected} /></div></section>
       <footer>Demo scenarios are fictional. Load a routine JSON export to inspect actual pipeline output. Review flags and confidence are not measured accuracy.</footer>
     </main>
   </div>;
